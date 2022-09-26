@@ -1,6 +1,5 @@
 from sklearn.ensemble import RandomForestClassifier
-from flask import Flask, request, Response, abort
-import time
+from flask import Flask, request, Response
 import json
 from json import JSONEncoder
 import traceback
@@ -9,13 +8,18 @@ import pandas
 import numpy
 
 from data_loader.data_loader import CsvDataLoader
-
-# app = Flask(__name__)
-
+from model.model import SklearnRandomForestClassifier
 
 class ModelTrainerServer:
 
     def __init__(self):
+
+        """
+        The Model Trainer Server implemented by Flask backend.
+        Manage the Model Training and expose several API for invoke.
+        class level object include `data_loader`, `model`, `dataframe`, `label series`, and `Flask`
+        """
+
         self._data_loader = None
         self._model = None
         self._df_x = None
@@ -92,7 +96,10 @@ class ModelTrainerServer:
             if model_type == 'sklearn random forest classifier':
 
                 try:
-                    model = RandomForestClassifier(
+                    # model = RandomForestClassifier(
+                    #     **model_params
+                    # )
+                    model = SklearnRandomForestClassifier(
                         **model_params
                     )
                     print(model)
