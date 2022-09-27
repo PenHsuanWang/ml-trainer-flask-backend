@@ -8,7 +8,8 @@ import pandas
 import numpy
 
 from data_loader.data_loader import CsvDataLoader
-from model.model import SklearnRandomForestClassifier
+from model.model import ModelSklearnRFClassifier, ModelXGBClassifier
+
 
 class ModelTrainerServer:
 
@@ -25,6 +26,11 @@ class ModelTrainerServer:
         self._df_x = None
         self._y = None
 
+        self._MODEL_KEY_NAME_MAPPING = {
+            "sk-rf-classifier": ModelSklearnRFClassifier,
+            "xgb-classifier": ModelXGBClassifier
+        }
+
         self.app = Flask(__name__)
 
 
@@ -34,7 +40,10 @@ class ModelTrainerServer:
                'Provide the data path and initialization the model configuration to do model training.'
 
     def load_data(self):
-        print("going to test dataloader")
+        """
+        Implementation of API to receive `data_path` for data loading into class level `DataFrame` object
+        :return:
+        """
 
         try:
             data_path = request.get_json()['data_path']
@@ -42,14 +51,10 @@ class ModelTrainerServer:
             print("target data path is {}".format(data_path))
 
             if data_path.split(".")[-1] == 'csv':
-                print("data format is csv")
                 self._data_loader = CsvDataLoader(data_path=data_path)
 
                 self._df_x = self._data_loader.get_df(do_label_encoder=True)
                 self._y = self._df_x.pop(label_name)
-
-                print(self._df_x.head(5))
-                print("load data success")
 
                 return Response(
                     json.dumps(
@@ -58,6 +63,18 @@ class ModelTrainerServer:
                     status=200,
                     headers={'content-type': 'application/json'}
                 )
+
+        except KeyError:
+            traceback.print_exc()
+            return Response(
+                json.dumps(
+                    'The key name error, please specified the keys `data_path` and `label` during the request sending.\n' +
+                    'e.g. \n'
+                    'data = {"data_path":<path-of-datafile-going-to-load>, "label":<label-name>}'
+                ),
+                status=503,
+                headers={'content-type': 'application/json'}
+            )
 
         except:
             traceback.print_exc()
@@ -88,25 +105,20 @@ class ModelTrainerServer:
             model_type = request.get_json()['model_type']
             model_params = request.get_json()['model_params']
 
-            print(model_type)
-            print(model_params)
+            print("Model type: {}".format(model_type))
 
-            model = None
+            model_class = self._MODEL_KEY_NAME_MAPPING.get(model_type)
 
-            if model_type == 'sklearn random forest classifier':
+            if model_class is None:
+                print("Error: Model {} not found in table".format(model_type))
+                print("please choose one of the the model key names below, which is available in this service")
+                print((self._MODEL_KEY_NAME_MAPPING.keys()))
 
-                try:
-                    # model = RandomForestClassifier(
-                    #     **model_params
-                    # )
-                    model = SklearnRandomForestClassifier(
-                        **model_params
-                    )
-                    print(model)
-                except:
-                    traceback.print_exc()
+            try:
+                model = model_class(
+                    **model_params
+                )
 
-            if model is not None:
                 self._model = model
                 print("finish of model initialization")
 
@@ -115,6 +127,12 @@ class ModelTrainerServer:
                     status=200,
                     headers={'content-type': 'application/json'}
                 )
+
+
+            except:
+                print("fail to initialize the model {}".format(model_class))
+                traceback.print_exc()
+
 
         except:
             traceback.print_exc()
@@ -145,18 +163,13 @@ class ModelTrainerServer:
                     return obj.tolist()
                 return JSONEncoder.default(self, obj)
 
-        print("going to do data prediction")
-
         try:
             data = request.get_json()
 
             data = json.dumps(data)
             df = pandas.read_json(data)
-            print(df)
-            print(df.head())
-
             result = self._model.predict(df)
-            print(result)
+
             return Response(
                 json.dumps(result, cls=NumpyArrayEncoder),
                 status=200,

@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import json
+import pytest
 import requests
 import traceback
 from data_loader.data_loader import CsvDataLoader
@@ -15,9 +16,10 @@ def test_loader_data_api():
             headers={'content-type': 'application/json'}
         )
         print(response.json())
-        assert True
+        print(response.status_code)
+        assert response.status_code == 200
     except:
-        traceback.print_stack()
+        traceback.print_exc()
 
 def test_check_data_api():
 
@@ -35,7 +37,7 @@ def test_init_model_api():
     try:
 
         data = {
-            "model_type": "sklearn random forest classifier",
+            "model_type": "sk-rf-classifier",
             "model_params": {"n_estimators": "10","criterion": "gini","verbose": "1"}
 
         }
@@ -44,7 +46,7 @@ def test_init_model_api():
         #'{"model_type":"sklearn random forest classifier", "model_params":"{"n_estimators": "10","criterion": "gini","verbose": "1"}"}'
         response = requests.post(
             url='http://127.0.0.1:5000/init-model/',
-            data='{"model_type":"sklearn random forest classifier","model_params":{"n_estimators":10,"criterion":"gini","verbose":1}}',
+            data='{"model_type":"sk-rf-classifier","model_params":{"n_estimators":10,"criterion":"gini","verbose":1}}',
             headers={'content-type': 'application/json'}
         )
         print(response.json())
