@@ -53,8 +53,8 @@ class ModelTrainerServer:
             if data_path.split(".")[-1] == 'csv':
                 self._data_loader = CsvDataLoader(data_path=data_path)
 
-                self._df_x = self._data_loader.get_df(do_label_encoder=True)
-                self._y = self._df_x.pop(label_name)
+                self._df_x = self._data_loader.get_df(do_label_encoder=True).drop(columns=[label_name])
+                self._y = self._data_loader.get_column(label_name)
 
                 return Response(
                     json.dumps(
@@ -104,6 +104,7 @@ class ModelTrainerServer:
         try:
             model_type = request.get_json()['model_type']
             model_params = request.get_json()['model_params']
+            scale_pos_weight = self._data_loader.get_pos_weight("SEPSIS", "True", "False")
 
             print("Model type: {}".format(model_type))
 
@@ -115,8 +116,12 @@ class ModelTrainerServer:
                 print((self._MODEL_KEY_NAME_MAPPING.keys()))
 
             try:
+                """
+                Model initialization, passing parameters extracted from http request.
+                """
                 model = model_class(
-                    **model_params
+                    **model_params,
+                    scale_pos_weight=scale_pos_weight
                 )
 
                 self._model = model
