@@ -1,8 +1,10 @@
-
+import json
 import os
+import traceback
 
 from abc import ABC
 
+import pandas
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 
@@ -10,6 +12,8 @@ from imblearn.under_sampling import RandomUnderSampler
 from imblearn.over_sampling import RandomOverSampler
 
 from collections import Counter
+
+#TODO dealing with imbalance data
 
 
 class DataExtractor:
@@ -37,6 +41,76 @@ class DataExtractor:
             print("Cannot extraction label: {} from dataframe: ".format(label))
             print("complete set of dataframe : ")
             print(x)
+
+    def get_column(self, column_name: str) -> pandas.Series:
+
+        try:
+            col = self._complete_set_df[column_name]
+            return col
+        except KeyError:
+            print("label name {} not found, please check.")
+            print("existing columns: {}".format(list(self._complete_set_df.columns)))
+            traceback.print_exc()
+            return None
+
+    def get_columns_class_profile(self, columns: str) -> str:
+        """
+        profiling classes composition of providing columns
+        :param columns:
+        :return:
+        """
+
+        col = self.get_column(columns)
+        return col.value_counts().to_json()
+
+    def get_class_weight(self, col_name: str):
+
+        column_class_profile = self.get_columns_class_profile(col_name)
+        json_profile = json.loads(column_class_profile)
+        tot_y_count = self.get_tot_y(col_name)
+
+        for k, v in json_profile.items():
+            print(k, v)
+
+        for k in json_profile.keys():
+            json_profile[k] /= tot_y_count
+
+        for k, v in json_profile.items():
+            print(k, v)
+
+    def get_pos_weight(self, label_name: str, pos_key: object, neg_key: object):
+        label_class_profile = self.get_columns_class_profile(label_name)
+        json_profile = json.loads(label_class_profile)
+
+        pos_weight = 1
+
+        if pos_key is None and neg_key is None:
+            pos_weight = json_profile['0'] / json_profile['1']
+        else:
+            pos_weight = json_profile[neg_key] / json_profile[pos_key]
+
+        return pos_weight
+
+
+
+    def get_tot_y(self, label_name: str):
+        return self.get_column(label_name).size
+
+
+
+# class DataProfiler(DataExtractor):
+#
+#     def __init__(self):
+#         super(DataProfiler).__init__()
+#
+#     def profile_target(self):
+#
+#         y = self.get_y()
+#         print(y)
+#         print(y.unique)
+#         print(y.value_counts())
+
+
 
 
 class DataLoader(DataExtractor, ABC):
