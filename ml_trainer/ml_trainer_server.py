@@ -7,8 +7,8 @@ import traceback
 import pandas
 import numpy
 
-from data_loader.data_loader import CsvDataLoader
-from model.model import ModelSklearnRFClassifier, ModelXGBClassifier
+from ml_trainer.data_loader.data_loader import CsvDataLoader
+from ml_trainer.model.model import ModelSklearnRFClassifier, ModelXGBClassifier
 
 
 class ModelTrainerServer:
@@ -25,6 +25,9 @@ class ModelTrainerServer:
         self._model = None
         self._df_x = None
         self._y = None
+
+
+        # TODO: MLFlow
 
         self._MODEL_KEY_NAME_MAPPING = {
             "sk-rf-classifier": ModelSklearnRFClassifier,
@@ -148,7 +151,10 @@ class ModelTrainerServer:
         print("going to fit the model")
 
         try:
+
+            # MLFlow
             self._model.fit(self._df_x, self._y)
+            #
             print("trained model successfully")
 
             return Response(

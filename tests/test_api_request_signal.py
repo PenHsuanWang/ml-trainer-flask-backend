@@ -4,7 +4,7 @@ import json
 import pytest
 import requests
 import traceback
-from data_loader.data_loader import CsvDataLoader
+from ml_trainer.data_loader.data_loader import CsvDataLoader
 from sklearn.metrics import accuracy_score, f1_score, recall_score, precision_score
 
 #TODO: unified the label name passing method and corresponding syntext structure
