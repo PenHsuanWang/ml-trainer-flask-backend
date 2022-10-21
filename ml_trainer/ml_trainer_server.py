@@ -87,20 +87,43 @@ class ModelTrainerServer:
         )
 
     def check_data(self):
-        print(self._df_x.head(5))
-        print(self._y.head(5))
+        """
+        Looking the head of loaded data to check the status of dataloader is done successfully.
+        Using REST API to invoke this function. provided the key `head_limit` to specify the limit of head to check, default limit is 5
+        :return:
+        """
+        limit = None
+        try:
+            limit = request.get_json()['head_limit']
+        except KeyError:
+            print("do not found the head_limit key from the http request. default limit is 5")
+
+        if limit is None:
+            limit = 5
+
+        print(self._df_x.head(limit))
+        print(self._y.head(limit))
 
         return Response(
             json.dumps(
-                str(self._df_x.head(5)) +
+                str(self._df_x.head(limit)) +
                 '\n' +
-                str(self._y.head(5))
+                str(self._y.head(limit))
             ),
             status=200,
             headers={'content-type':'application/json'}
         )
 
     def init_model(self):
+
+        """
+        Implement function of the model initialization. Setup the function for following fitting and prediction usage.
+        Using REST API to invoke this function, provided the key
+        `model_type`: specified the model, `sklearn`, `XGBoost` is supported.
+        `model_params`: specified the model hyperparameter.
+
+        :return:
+        """
 
         print("going to initialized the model")
 

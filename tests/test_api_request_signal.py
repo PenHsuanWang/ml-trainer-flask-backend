@@ -29,6 +29,8 @@ def test_check_data_api():
     try:
         response = requests.post(
             url='http://127.0.0.1:5000/check-data/',
+            data='{"head_limit":20}',
+            headers={'content_type': 'application/json'}
         )
         print(response.json())
         assert True
